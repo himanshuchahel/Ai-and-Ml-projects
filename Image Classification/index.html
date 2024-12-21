@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Captioning</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7fc;
+            text-align: center;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        /* Input and Button Styling */
+        input[type="file"] {
+            margin: 20px 0;
+            padding: 10px;
+            border-radius: 5px;
+            border: 2px solid #ccc;
+            background-color: #fff;
+            cursor: pointer;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        button:hover {
+            background-color: #45a049;
+            transform: scale(1.1);
+        }
+
+        /* Image Preview Styling */
+        #imagePreview {
+            max-width: 100%;
+            max-height: 400px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        /* Description Styling */
+        #description {
+            font-size: 1.2em;
+            margin-top: 20px;
+            color: #333;
+            opacity: 1; /* Make it visible */
+        }
+
+        /* Container to align image and text */
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Upload an Image for Captioning</h1>
+    <input type="file" id="imageUpload" accept="image/*">
+    <button id="submitButton">Generate Description</button>
+
+    <!-- Container for Image and Description -->
+    <div class="container">
+        <img id="imagePreview" alt="Selected Image">
+        <p id="description">This is the generated text area.</p>
+    </div>
+
+    <script>
+        // Show selected image preview
+        document.getElementById("imageUpload").addEventListener("change", function() {
+            const file = this.files[0];
+            const imagePreview = document.getElementById("imagePreview");
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    imagePreview.src = e.target.result;
+                    imagePreview.style.display = "block"; // Show the image
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        document.getElementById("submitButton").addEventListener("click", async () => {
+            const fileInput = document.getElementById("imageUpload");
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert("Please upload an image!");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("file", file);
+
+            try {
+                const response = await fetch("http://127.0.0.1:8000/generate-description", {
+                    method: "POST",
+                    body: formData,
+                });
+
+                console.log('Response Status:', response.status); // Log response status
+
+                if (response.status !== 200) {
+                    throw new Error(`Failed to fetch description: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('Response Data:', data);  // Log the response data
+
+                if (data && data.description) {
+                    const descriptionElement = document.getElementById("description");
+                    console.log('Updating description...');
+                    descriptionElement.textContent = `Description: ${data.description}`;
+                } else {
+                    console.error('Description not found in response:', data);
+                    throw new Error("No description found in response.");
+                }
+
+            } catch (error) {
+                console.error("Error:", error);
+                document.getElementById("description").textContent = "An error occurred while generating the description.";
+            }
+        });
+    </script>
+</body>
+</html>
